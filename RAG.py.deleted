@@ -1,0 +1,2 @@
+# Deleting the compatibility shim; rag_search.py is the canonical implementation.
+# This file now exists as a placeholder to make the deletion explicit in the commit.
