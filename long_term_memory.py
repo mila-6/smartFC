@@ -13,6 +13,6 @@ def save_memory(user_id: str, key: str, value):
 def load_memory(user_id: str):
     """
     Load all memory for a specific user.
-    Returns an empty dict if the user has no stored memory.
+    Returns an empty dictionary if the user has no stored memory.
     """
     return long_term_memory.get(user_id, {})
