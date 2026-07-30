@@ -18,4 +18,3 @@ def workflow(state: MoneyState) -> MoneyState:
     """
     state = run_main_agent(state)
     return state
-
