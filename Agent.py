@@ -3,24 +3,16 @@ from state import MoneyState
 from long_term_memory import load_memory, save_memory
 from rag_search import rag_search
 
-from langgraph.checkpoint import InMemorySaver
-from langgraph.store import InMemoryStore
-from langgraph.func import task, interrupt
-from langgraph.types import RetryPolicy, Command
+from langgraph.func import task
+from langgraph.types import RetryPolicy
 
 # -----------------------------
-# 1) Checkpointer + Long-term Memory
-# -----------------------------
-checkpointer = InMemorySaver()
-long_term_store = InMemoryStore()
-
-# -----------------------------
-# 2) LLM
+# 1) LLM
 # -----------------------------
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 # -----------------------------
-# 3) Retry Policy
+# 2) Retry Policy
 # -----------------------------
 retry_policy = RetryPolicy(
     max_attempts=3,
@@ -28,17 +20,16 @@ retry_policy = RetryPolicy(
 )
 
 # -----------------------------
-# 4) Main Agent Task (with retry)
+# 3) Main Agent Task (with retry)
 # -----------------------------
 @task(retry=retry_policy)
-def main_agent(state: MoneyState) -> MoneyState:
+def main_agent(state: MoneyState, *, long_term_store) -> MoneyState:
     """
     Main financial assistant agent.
     Pattern: Prompt Chaining (analyze → recommend).
     Uses:
     - Long-term memory
     - RAG
-    - Human-in-the-loop
     - Retry policy
     """
 
@@ -52,14 +43,6 @@ def main_agent(state: MoneyState) -> MoneyState:
 
     # Save user query to long-term memory (example)
     save_memory("user1", "last_query", user_message)
-
-    # Human-in-the-loop: confirm large expenses
-    if "صرف" in user_message or "مصروف" in user_message:
-        decision = interrupt(
-            "هل تريدين تأكيد تسجيل هذا المصروف؟ اكتبي yes أو no"
-        )
-        if decision.lower() != "yes":
-            return Command(resume=state)
 
     # Build the prompt
     prompt = f"""
@@ -79,11 +62,10 @@ def main_agent(state: MoneyState) -> MoneyState:
 
     try:
         response = llm.invoke(prompt)
+        response_content = response.content
     except Exception:
         # Fallback strategy
         response_content = "حدث خطأ أثناء التحليل. جربي إعادة صياغة السؤال."
-    else:
-        response_content = response.content
 
     # Append to conversation history
     state.messages.append({
@@ -92,4 +74,3 @@ def main_agent(state: MoneyState) -> MoneyState:
     })
 
     return state
-
