@@ -1,0 +1,20 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+# Virtual envs
+.env/
+
+# Editor directories
+.vscode/
+.idea/
+
+# Python build
+build/
+dist/
+
+# Data
+persist_store.json
+
