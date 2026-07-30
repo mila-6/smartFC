@@ -2,7 +2,7 @@ from typing import List, Dict, Any
 
 def expense_analyzer(expenses: List[Dict[str, Any]]):
     """
-    يحلل المصاريف ويعطي مجموع الصرف وتقسيمه حسب الفئات.
+    Analyzes expenses and returns the total spending and a breakdown by category.
     """
     total = sum(e["amount"] for e in expenses)
 
