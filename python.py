@@ -14,7 +14,8 @@ load_dotenv()
 @tool
 def calculate_monthly_savings(income: float, expenses: float, goal_amount: float) -> Dict[str, float | str | None]:
     """
-    Calculate monthly savings and estimated months to reach a savings goal.
+    Calculate monthly savings and the estimated number of months required
+    to reach a savings goal.
     """
     if income <= expenses:
         return {
@@ -73,7 +74,7 @@ def analyze_query(state: AppState) -> AppState:
 def generate_recommendation(state: AppState) -> AppState:
     """
     Use structured output to produce a clear budget recommendation
-    (recommended_amount + reason) based on the user query and tool_result.
+    based on the user query and tool_result.
     """
     prompt = (
         "You are a budgeting assistant. Based on the user's query and the tool "
@@ -92,3 +93,4 @@ def app(state: AppState) -> AppState:
     state = analyze_query(state)
     state = generate_recommendation(state)
     return state
+
