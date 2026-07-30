@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 class MoneyState(BaseModel):
     """
     State object used by the LangGraph Functional API.
-    Holds the user query, messages, and memory.
+    Holds the user query, messages, memory, and final output.
     """
     query: str
     messages: List[Dict[str, Any]] = []
