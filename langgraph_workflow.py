@@ -1,11 +1,13 @@
-from langgraph.func import task, entrypoint
+from langgraph.func import task, entrypoint, interrupt
 from typing import Optional
 import time
 import logging
 
 from state import MoneyState
-from agent import main_agent
-from persistence import InMemorySaver, InMemoryStore
+from Agent import main_agent
+from langgraph.checkpoint import InMemorySaver
+from langgraph.store import InMemoryStore
+from langgraph.types import RetryPolicy, Command
 
 # Workflow pattern: Orchestrator-Worker
 # ------------------------------------
@@ -17,47 +19,14 @@ from persistence import InMemorySaver, InMemoryStore
 #   easier to add retries, caching, or parallel workers later.
 # ------------------------------------
 
-# Simple RetryPolicy decorator used for LLM/tool calls.
-class RetryPolicy:
-    def __init__(self, retries: int = 2, backoff: float = 1.0):
-        self.retries = retries
-        self.backoff = backoff
-
-    def __call__(self, fn):
-        def wrapper(*args, **kwargs):
-            last_err = None
-            for attempt in range(1, self.retries + 2):
-                try:
-                    return fn(*args, **kwargs)
-                except Exception as e:
-                    last_err = e
-                    logging.warning(f"Attempt {attempt} failed: {e}")
-                    if attempt <= self.retries:
-                        time.sleep(self.backoff * attempt)
-                    else:
-                        break
-            # Fallback behavior: bubble up the last exception for the caller to handle
-            raise last_err
-        return wrapper
+# Use the real LangGraph RetryPolicy and construct a retry policy object to pass into @task
+retry_policy = RetryPolicy(
+    max_attempts=2,
+    backoff_factor=0.5,
+)
 
 
-# Try to import interrupt/Command from langgraph; if not available, provide a console fallback
-try:
-    from langgraph.control import interrupt, Command  # type: ignore
-except Exception:
-    # Fallbacks for development/testing outside langgraph runtime
-    class Command:
-        def __init__(self, resume: dict | None = None):
-            self.resume = resume
-
-    def interrupt(prompt: str = "Confirm? (y/n): ") -> Command:
-        # Blocking console fallback for human-in-the-loop during dev
-        resp = input(prompt)
-        return Command(resume={"confirmed": resp.strip().lower() in ("y", "yes")})
-
-
-@task
-@RetryPolicy(retries=2, backoff=0.5)
+@task(retry=retry_policy)
 def run_main_agent(state: MoneyState, *, long_term_store: Optional[InMemoryStore] = None) -> MoneyState:
     """
     Executes the main agent and stores its output in the state.
