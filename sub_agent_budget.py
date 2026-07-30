@@ -2,7 +2,7 @@ from typing import Dict, Any
 
 def budget_creator(income: float, fixed_costs: float, variable_costs: float) -> Dict[str, Any]:
     """
-    ينشئ ميزانية مبسّطة بناءً على الدخل والتكاليف.
+    Creates a simplified budget based on income and expenses.
     """
     savings = income * 0.20
 
