@@ -5,9 +5,8 @@ from agent import main_agent
 @task
 def run_main_agent(state: MoneyState) -> MoneyState:
     """
-    Runs the main agent and stores its output in the state.
+    Executes the main agent and stores its output in the state.
     """
-    # main_agent is a normal Python function, so we call it directly
     updated_state = main_agent(state)
     state.output = updated_state.messages[-1]["content"]
     return state
