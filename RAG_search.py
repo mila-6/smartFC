@@ -1,6 +1,18 @@
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 
+# -----------------------------------------
+# RAG Strategy Justification
+# -----------------------------------------
+# نستخدم RAG من خطوتين (2-Step RAG):
+# 1) استرجاع النصوص المالية الأقرب للسؤال باستخدام FAISS + Embeddings.
+# 2) تمرير النصوص المسترجعة للنموذج لبناء إجابة مدعومة بالمحتوى.
+#
+# هذا مناسب لأن نطاق المعرفة محدود (نصوص مالية قصيرة)،
+# ولا نحتاج تعقيد Agentic أو Hybrid RAG.
+# التركيز هنا على استرجاع دقيق + إجابة واضحة.
+# -----------------------------------------
+
 # Financial knowledge base
 financial_docs = [
     "الادخار المثالي يكون بين 10% إلى 30% من الدخل.",
@@ -19,3 +31,4 @@ def rag_search(query: str) -> str:
     """
     results = vector_store.similarity_search(query, k=2)
     return "\n".join([r.page_content for r in results])
+
