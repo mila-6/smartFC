@@ -8,28 +8,13 @@ from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langgraph.func import task, entrypoint
 
-
 # Load environment variables from .env if present
 load_dotenv()
 
-# Make sure you have OPENAI_API_KEY set in your environment or .env file
-# Example .env:
-# OPENAI_API_KEY=sk-...
 @tool
 def calculate_monthly_savings(income: float, expenses: float, goal_amount: float) -> Dict[str, float | str | None]:
     """
     Calculate monthly savings and estimated months to reach a savings goal.
-
-    Args:
-        income: Monthly income.
-        expenses: Monthly expenses.
-        goal_amount: Target savings amount.
-
-    Returns:
-        dict with:
-            - monthly_savings: income - expenses
-            - months_to_goal: goal_amount / monthly_savings (if possible)
-            - message: status message
     """
     if income <= expenses:
         return {
@@ -67,15 +52,12 @@ llm_with_tools = llm.bind_tools([calculate_monthly_savings])
 # LLM that returns structured BudgetRecommendation
 structured_llm = llm.with_structured_output(BudgetRecommendation)
 
-
-
 @task
 def analyze_query(state: AppState) -> AppState:
     """
     Use the tool-enabled LLM to interpret the user's query and call
     calculate_monthly_savings when appropriate.
     """
-    # The model is instructed to use tools if the query contains numbers
     prompt = (
         "You are a budgeting assistant. If the user query includes income, "
         "expenses, and a goal amount, call the appropriate tool to compute "
@@ -84,10 +66,8 @@ def analyze_query(state: AppState) -> AppState:
     )
 
     response = llm_with_tools.invoke(prompt)
-    # response may include tool call results; we store it as-is
     state.tool_result = getattr(response, "tool_calls", None) or getattr(response, "parsed", None) or None
     return state
-
 
 @task
 def generate_recommendation(state: AppState) -> AppState:
@@ -96,4 +76,19 @@ def generate_recommendation(state: AppState) -> AppState:
     (recommended_amount + reason) based on the user query and tool_result.
     """
     prompt = (
-        "You
+        "You are a budgeting assistant. Based on the user's query and the tool "
+        "results, provide a recommended monthly savings amount and explain why."
+    )
+
+    result = structured_llm.invoke(prompt)
+    state.recommendation = result
+    return state
+
+@entrypoint
+def app(state: AppState) -> AppState:
+    """
+    Main workflow entrypoint.
+    """
+    state = analyze_query(state)
+    state = generate_recommendation(state)
+    return state
