@@ -79,3 +79,4 @@ if st.button("تحليل المصاريف"):
 if st.button("🔄 إعادة تشغيل الذاكرة"):
     st.session_state.chat_history = []
     st.success("تم مسح الذاكرة وإعادة تشغيل النظام.")
+
